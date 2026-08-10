@@ -413,6 +413,27 @@
       }
     }
 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyb7cGg-G3piixkg_EWM_rPt78UEaYf0-hNK1UuJwlaANdWxQfOaeCnN7Nn8-shXDyVhg/exec';
+
+    function jsonp(params) {
+      return new Promise(function (resolve, reject) {
+        const cbName = 'cb' + Date.now() + Math.floor(Math.random() * 1000);
+        const script = document.createElement('script');
+        window[cbName] = function (data) {
+          delete window[cbName];
+          script.remove();
+          resolve(data);
+        };
+        script.src = SCRIPT_URL + '?' + params + '&callback=' + cbName;
+        script.onerror = function () {
+          delete window[cbName];
+          script.remove();
+          reject(new Error('랭킹 서버 연결 실패'));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
     function endGame() {
       if (timerInterval) {
         clearInterval(timerInterval);
@@ -422,28 +443,27 @@
       document.getElementById('endScreen').style.display = 'block';
       document.getElementById('finalScore').textContent = nickname + '님, ' + quotes.length + '문제 중 ' + score + '문제를 맞췄습니다!';
 
-      const key = 'movie_quiz_rankings';
-      let rankings = [];
-      try {
-        rankings = JSON.parse(localStorage.getItem(key)) || [];
-      } catch (e) {
-        rankings = [];
-      }
-      const entry = { name: nickname, score: score };
-      rankings.push(entry);
-      rankings.sort(function (a, b) { return b.score - a.score; });
-      localStorage.setItem(key, JSON.stringify(rankings));
-
       const list = document.getElementById('rankingList');
-      list.innerHTML = '';
-      rankings.forEach(function (r, i) {
-        const li = document.createElement('li');
-        li.textContent = r.name + '  -  ' + r.score + '문제';
-        if (r === entry) {
-          li.className = 'me';
-        }
-        list.appendChild(li);
-      });
+      list.innerHTML = '<li>랭킹을 불러오는 중...</li>';
+
+      jsonp('action=add&name=' + encodeURIComponent(nickname) + '&score=' + score)
+        .then(function () {
+          return jsonp('action=list');
+        })
+        .then(function (rankings) {
+          list.innerHTML = '';
+          rankings.forEach(function (r, i) {
+            const li = document.createElement('li');
+            li.textContent = r.name + '  -  ' + r.score + '문제';
+            if (r.name === nickname && r.score === score) {
+              li.className = 'me';
+            }
+            list.appendChild(li);
+          });
+        })
+        .catch(function () {
+          list.innerHTML = '<li>랭킹을 불러오지 못했습니다.</li>';
+        });
     }
 
     document.getElementById('nickname').addEventListener('keydown', function (e) {
