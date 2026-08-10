@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>영화 명대사 맞히기</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .desc {
+      font-size: 1.1rem;
+      color: #e0e0e0;
+      margin-bottom: 30px;
+    }
+
+    .score {
+      font-size: 1.1rem;
+      color: #e0e0e0;
+      margin-bottom: 8px;
+    }
+
+    .timer {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #ffd76a;
+      margin-bottom: 20px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .time-over {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ff5252;
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      z-index: 100;
+    }
+
+    input[type="text"] {
+      font-size: 1rem;
+      padding: 14px 18px;
+      border: none;
+      border-radius: 40px;
+      width: 320px;
+      max-width: 70vw;
+      outline: none;
+    }
+
+    button {
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 14px 36px;
+      border: none;
+      border-radius: 40px;
+      background: #fff;
+      color: #667eea;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .start-screen input {
+      display: block;
+      margin: 0 auto 20px;
+      text-align: center;
+    }
+
+    .credit {
+      margin-top: 30px;
+      font-size: 0.9rem;
+      color: #d0d0d0;
+    }
+
+    .quote-box {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 640px;
+      min-height: 220px;
+      margin: 0 auto 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quote {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.8;
+      font-style: italic;
+    }
+
+    .answer-area {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .feedback {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 20px 30px;
+      border-radius: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .feedback.correct {
+      background: rgba(46, 204, 113, 0.85);
+    }
+
+    .feedback.wrong {
+      background: rgba(231, 76, 60, 0.85);
+    }
+
+    .feedback p {
+      margin-bottom: 10px;
+    }
+
+    .feedback p:last-child {
+      margin-bottom: 0;
+    }
+
+    .final-score {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .ranking-box {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 480px;
+      margin: 0 auto 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      text-align: left;
+    }
+
+    .ranking-box h3 {
+      text-align: center;
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+    }
+
+    .ranking-box ol {
+      list-style: none;
+      counter-reset: rank;
+    }
+
+    .ranking-box li {
+      counter-increment: rank;
+      padding: 10px 12px;
+      font-size: 1.05rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .ranking-box li::before {
+      content: counter(rank) "위";
+      font-weight: 700;
+      margin-right: 12px;
+      color: #ffd76a;
+    }
+
+    .ranking-box li.me {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .ranking-box li:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="start-screen" id="startScreen">
+      <h1>영화 명대사 맞히기</h1>
+      <p class="desc">명대사를 보고 영화 제목을 맞혀보세요!</p>
+      <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="10" autocomplete="off">
+      <button onclick="startGame()">시작하기</button>
+      <p class="credit">Made by 민준앤은상</p>
+    </div>
+
+    <div class="game-screen" id="gameScreen" style="display:none;">
+      <h1>영화 명대사 맞히기</h1>
+      <p class="score" id="score">정답 0 / 0</p>
+      <p class="timer" id="timer">05:00</p>
+      <div class="quote-box">
+        <p class="quote" id="quote"></p>
+      </div>
+      <div class="answer-area" id="answerArea">
+        <input type="text" id="answerInput" placeholder="영화 제목을 입력하세요" autocomplete="off">
+        <button id="submitBtn" onclick="checkAnswer()">정답 제출</button>
+      </div>
+      <div class="feedback" id="feedback" style="display:none;">
+        <p id="feedbackText"></p>
+        <p id="correctAnswer"></p>
+        <button id="nextBtn" onclick="nextQuestion()">다음 문제</button>
+      </div>
+    </div>
+
+    <div class="end-screen" id="endScreen" style="display:none;">
+      <h1>게임 종료!</h1>
+      <p class="final-score" id="finalScore"></p>
+      <div class="ranking-box">
+        <h3>랭킹</h3>
+        <ol id="rankingList"></ol>
+      </div>
+    </div>
+
+    <div class="time-over" id="timeOverMsg" style="display:none;">TIME OVER</div>
+  </div>
+
+  <script>
+    const quotes = [
+      { quote: "너는 다 계획이 있구나.", author: "기생충" },
+      { quote: "웃어라, 모든 사람이 너와 함께 웃을 것이다. 울어라, 너 혼자 울 것이다.", author: "올드보이" },
+      { quote: "지금까지 이런 맛은 없었다. 이것은 갈비인가 통닭인가.", author: "극한직업" },
+      { quote: "밥은 먹고 다니냐?", author: "살인의 추억" },
+      { quote: "동작 그만, 밑장 빼기냐?", author: "타짜" },
+      { quote: "대한민국은 민주공화국입니다! 대한민국의 모든 권력은 국민으로부터 나온다!", author: "변호인" },
+      { quote: "어찌, 내가 왕이 될 상인가?", author: "관상" },
+      { quote: "드루와, 드루와.", author: "신세계" },
+      { quote: "지금부터 진실의 방으로.", author: "범죄도시" },
+      { quote: "실패하면 반역, 성공하면 혁명 아닙니까!", author: "서울의 봄" },
+      { quote: "I'll be back. (다시 돌아오겠다.)", author: "터미네이터 2" },
+      { quote: "Why so serious? (왜 그리 심각해?)", author: "다크 나이트" },
+      { quote: "I'm gonna make him an offer he can't refuse. (거절하지 못할 제안을 하겠소.)", author: "대부" },
+      { quote: "Avengers, assemble. (어벤져스, 어셈블.)", author: "어벤져스: 엔드게임", aliases: ["엔드게임"] },
+      { quote: "I see dead people. (죽은 사람들이 보여요.)", author: "식스 센스" },
+      { quote: "Roads? Where we're going, we don't need roads. (도로? 우리가 가는 곳엔 도로 따윈 필요 없어.)", author: "백 투 더 퓨처" },
+      { quote: "We will find a way, we always have. (우린 답을 찾을 것이다, 늘 그랬듯이.)", author: "인터스텔라" },
+      { quote: "This is Sparta! (여기가 바로 스파르타다!)", author: "300" },
+      { quote: "No, I am your father. (내가 너의 아버지다.)", author: "스타워즈: 제국의 역습" },
+      { quote: "You shall not pass! (넌 통과하지 못한다!)", author: "반지의 제왕: 반지원정대" },
+      { quote: "Manners maketh man. (매너가 사람을 만든다.)", author: "킹스맨: 시크릿 에이전트" },
+      { quote: "If you kill yourself, you wake up, right? (꿈에서 죽으면 깨어난다, 그렇지?)", author: "인셉션" },
+      { quote: "I see you. (당신을 봅니다.)", author: "아바타" },
+      { quote: "Witness me! (나를 기억해 줘!)", author: "매드맥스: 분노의 도로" },
+      { quote: "Now I am become Death, the destroyer of worlds. (나는 이제 죽음이요, 세상의 파괴자가 되었다.)", author: "오펜하이머" },
+      { quote: "All is well. (알 이즈 웰, 다 잘 될 거야.)", author: "세 얼간이" },
+      { quote: "You take the blue pill, the story ends. You take the red pill, you stay in Wonderland. (파란 약을 먹으면 여기서 끝난다. 하지만 빨간 약을 먹으면 이상한 나라에 남아 진실을 보게 될 것이다.)", author: "매트릭스" },
+      { quote: "Hakuna Matata. (하쿠나 마타타, 다 잘 될 거야.)", author: "라이온 킹" },
+      { quote: "Remember me. (나를 기억해 줘.)", author: "코코" },
+      { quote: "To infinity and beyond! (무한한 공간 저 너머로!)", author: "토이 스토리" },
+      { quote: "Let it go! (다 잊어, 훌훌털어 버려!)", author: "겨울왕국" },
+      { quote: "In case I don't see ya, good afternoon, good evening, and good night! (못 볼지도 모르니 미리 인사하죠.)", author: "트루먼 쇼" }
+    ];
+
+    let quoteQueue = [];
+    let currentQuote = null;
+    let score = 0;
+    let answeredCount = 0;
+    let nickname = '';
+    let timerInterval = null;
+    let timeLeft = 300;
+    const totalTime = 300;
+
+    function normalize(str) {
+      return str.trim().toLowerCase().replace(/\s+/g, '');
+    }
+
+    function startGame() {
+      nickname = document.getElementById('nickname').value.trim();
+      if (!nickname) {
+        alert('닉네임을 입력해주세요.');
+        return;
+      }
+      document.getElementById('startScreen').style.display = 'none';
+      document.getElementById('gameScreen').style.display = 'block';
+      showQuestion();
+      startTimer();
+    }
+
+    function startTimer() {
+      timeLeft = totalTime;
+      updateTimer();
+      timerInterval = setInterval(function () {
+        timeLeft--;
+        updateTimer();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          timeOver();
+        }
+      }, 1000);
+    }
+
+    function updateTimer() {
+      const m = Math.floor(timeLeft / 60);
+      const s = timeLeft % 60;
+      document.getElementById('timer').textContent =
+        String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function timeOver() {
+      document.getElementById('answerArea').style.display = 'none';
+      document.getElementById('feedback').style.display = 'none';
+      document.getElementById('timeOverMsg').style.display = 'flex';
+      setTimeout(function () {
+        document.getElementById('timeOverMsg').style.display = 'none';
+        endGame();
+      }, 2000);
+    }
+
+    function showQuestion() {
+      if (quoteQueue.length === 0) {
+        quoteQueue = quotes.slice();
+        for (let i = quoteQueue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [quoteQueue[i], quoteQueue[j]] = [quoteQueue[j], quoteQueue[i]];
+        }
+      }
+      currentQuote = quoteQueue.pop();
+
+      document.getElementById('quote').textContent = currentQuote.quote;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('feedback').style.display = 'none';
+      document.getElementById('answerArea').style.display = 'flex';
+      document.getElementById('answerInput').focus();
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById('answerInput').value;
+      if (!input.trim()) {
+        alert('영화 제목을 입력해주세요.');
+        return;
+      }
+
+      answeredCount++;
+      const userAnswer = normalize(input);
+      const answers = [normalize(currentQuote.author)]
+        .concat((currentQuote.aliases || []).map(normalize));
+      const correct = answers.some(function (a) {
+        return userAnswer.startsWith(a.slice(0, 3));
+      });
+
+      const feedback = document.getElementById('feedback');
+      const feedbackText = document.getElementById('feedbackText');
+      const correctAnswer = document.getElementById('correctAnswer');
+
+      if (correct) {
+        score++;
+        feedback.className = 'feedback correct';
+        feedbackText.textContent = '정답입니다!';
+        correctAnswer.textContent = '';
+      } else {
+        feedback.className = 'feedback wrong';
+        feedbackText.textContent = '오답입니다.';
+        correctAnswer.textContent = '정답: ' + currentQuote.author;
+      }
+
+      document.getElementById('score').textContent = '정답 ' + score + ' / ' + answeredCount;
+      document.getElementById('answerArea').style.display = 'none';
+      document.getElementById('nextBtn').textContent = answeredCount >= quotes.length ? '결과 보기' : '다음 문제';
+      feedback.style.display = 'block';
+    }
+
+    function nextQuestion() {
+      if (answeredCount >= quotes.length) {
+        endGame();
+      } else {
+        showQuestion();
+      }
+    }
+
+    function endGame() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      document.getElementById('gameScreen').style.display = 'none';
+      document.getElementById('endScreen').style.display = 'block';
+      document.getElementById('finalScore').textContent = nickname + '님, ' + quotes.length + '문제 중 ' + score + '문제를 맞췄습니다!';
+
+      const key = 'movie_quiz_rankings';
+      let rankings = [];
+      try {
+        rankings = JSON.parse(localStorage.getItem(key)) || [];
+      } catch (e) {
+        rankings = [];
+      }
+      const entry = { name: nickname, score: score };
+      rankings.push(entry);
+      rankings.sort(function (a, b) { return b.score - a.score; });
+      localStorage.setItem(key, JSON.stringify(rankings));
+
+      const list = document.getElementById('rankingList');
+      list.innerHTML = '';
+      rankings.forEach(function (r, i) {
+        const li = document.createElement('li');
+        li.textContent = r.name + '  -  ' + r.score + '문제';
+        if (r === entry) {
+          li.className = 'me';
+        }
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('nickname').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') startGame();
+    });
+
+    document.getElementById('answerInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') checkAnswer();
+    });
+  </script>
+</body>
+</html>
