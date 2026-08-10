@@ -254,6 +254,7 @@
       <div class="ranking-box">
         <h3>랭킹</h3>
         <ol id="rankingList"></ol>
+        <button onclick="reloadRanking()" style="margin-top:15px; font-size:0.9rem; padding:10px 24px;">랭킹 다시 불러오기</button>
       </div>
     </div>
 
@@ -428,10 +429,47 @@
         script.onerror = function () {
           delete window[cbName];
           script.remove();
-          reject(new Error('랭킹 서버 연결 실패'));
+          reject(new Error('JSONP 요청 실패'));
         };
         document.head.appendChild(script);
       });
+    }
+
+    function request(params) {
+      return fetch(SCRIPT_URL + '?' + params)
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.text();
+        })
+        .then(function (text) {
+          return JSON.parse(text);
+        })
+        .catch(function () {
+          return jsonp(params);
+        });
+    }
+
+    function renderRankings(rankings) {
+      const list = document.getElementById('rankingList');
+      list.innerHTML = '';
+      rankings.forEach(function (r) {
+        const li = document.createElement('li');
+        li.textContent = r.name + '  -  ' + r.score + '문제';
+        if (r.name === nickname && r.score === score) {
+          li.className = 'me';
+        }
+        list.appendChild(li);
+      });
+    }
+
+    function reloadRanking() {
+      const list = document.getElementById('rankingList');
+      list.innerHTML = '<li>랭킹을 불러오는 중...</li>';
+      request('action=list')
+        .then(renderRankings)
+        .catch(function () {
+          list.innerHTML = '<li>랭킹을 불러오지 못했습니다.</li>';
+        });
     }
 
     function endGame() {
@@ -446,21 +484,11 @@
       const list = document.getElementById('rankingList');
       list.innerHTML = '<li>랭킹을 불러오는 중...</li>';
 
-      jsonp('action=add&name=' + encodeURIComponent(nickname) + '&score=' + score)
+      request('action=add&name=' + encodeURIComponent(nickname) + '&score=' + score)
         .then(function () {
-          return jsonp('action=list');
+          return request('action=list');
         })
-        .then(function (rankings) {
-          list.innerHTML = '';
-          rankings.forEach(function (r, i) {
-            const li = document.createElement('li');
-            li.textContent = r.name + '  -  ' + r.score + '문제';
-            if (r.name === nickname && r.score === score) {
-              li.className = 'me';
-            }
-            list.appendChild(li);
-          });
-        })
+        .then(renderRankings)
         .catch(function () {
           list.innerHTML = '<li>랭킹을 불러오지 못했습니다.</li>';
         });
